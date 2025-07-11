@@ -4,8 +4,8 @@ import (
 	"log/slog"
 	"os"
 
-	"github.com/imdevinc/ghibli-ai/pkg/app"
-	"github.com/imdevinc/ghibli-ai/pkg/imagegenerators"
+	"github.com/imdevinc/lego-ai/pkg/app"
+	"github.com/imdevinc/lego-ai/pkg/imagegenerators"
 	_ "github.com/joho/godotenv/autoload"
 )
 

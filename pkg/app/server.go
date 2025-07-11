@@ -11,8 +11,8 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/imdevinc/ghibli-ai/pkg/imagegenerators"
-	"github.com/imdevinc/ghibli-ai/pkg/models"
+	"github.com/imdevinc/lego-ai/pkg/imagegenerators"
+	"github.com/imdevinc/lego-ai/pkg/models"
 )
 
 const MAX_SIZE = 50 * 1024 * 1024 // 50MB

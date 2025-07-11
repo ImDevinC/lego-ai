@@ -10,7 +10,7 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/imdevinc/ghibli-ai/pkg/models"
+	"github.com/imdevinc/lego-ai/pkg/models"
 )
 
 type OpenAIGenerator struct {

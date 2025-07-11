@@ -1,4 +1,4 @@
-module github.com/imdevinc/ghibli-ai
+module github.com/imdevinc/lego-ai
 
 go 1.24.4
 
