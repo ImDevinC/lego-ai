@@ -89,7 +89,6 @@ func getUploadData(r *http.Request) (string, string, error) {
 	if err != nil {
 		return "", "", fmt.Errorf("failed to parse form. %w", err)
 	}
-	slog.Info("form values", "form", r.Form)
 	apiKey := r.Form.Get("apiKey")
 	if apiKey == "" {
 		return "", "", errors.New("missing apiKey")
