@@ -6,4 +6,8 @@ on:
 
 jobs:
   check-pr:
+    permissions:
+      contents: write
+      issues: read
+      pull-requests: read
     uses: imdevinc/imdevinc/.github/workflows/shared-validate-semver-tags.yaml@v1
