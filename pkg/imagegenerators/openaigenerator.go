@@ -1,10 +1,13 @@
 package imagegenerators
 
+// https://github.com/infosecak/DeGhiblify/blob/main/src/openai_client.py
+
 import (
 	"bytes"
 	"encoding/json"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 	"strings"
 
@@ -12,9 +15,12 @@ import (
 )
 
 type OpenAIGenerator struct {
-	urlBase string
-	apiKey  string
-	model   string
+	urlBase      string
+	apiKey       string
+	imageModel   string
+	chatModel    string
+	systemPrompt string
+	userPrompt   string
 }
 
 type openAIImageRequest struct {
@@ -22,7 +28,7 @@ type openAIImageRequest struct {
 	Prompt         string `json:"prompt"`
 	Count          int    `json:"n"`
 	Size           string `json:"size"`
-	ResponseFormat string `json:"response_format"`
+	ResponseFormat string `json:"response_format,omitempty"`
 }
 
 type openAIImageResponse struct {
@@ -70,11 +76,14 @@ type openAIChatResponse struct {
 
 var _ Generator = (*OpenAIGenerator)(nil)
 
-func NewOpenAIGenerator(apiKey string, model string) OpenAIGenerator {
+func NewOpenAIGenerator(apiKey string, imageModel string, chatModel string, systemPrompt string, userPrompt string) OpenAIGenerator {
 	return OpenAIGenerator{
-		urlBase: "https://api.openai.com/v1/",
-		model:   model,
-		apiKey:  apiKey,
+		urlBase:      "https://api.openai.com/v1/",
+		imageModel:   imageModel,
+		chatModel:    chatModel,
+		apiKey:       apiKey,
+		systemPrompt: systemPrompt,
+		userPrompt:   userPrompt,
 	}
 }
 
@@ -126,29 +135,38 @@ func (g *OpenAIGenerator) GenerateImageFromText(request models.TextToImageReques
 }
 
 func (g *OpenAIGenerator) GenerateImageFromImage(request models.ImageToImageRequest) (string, error) {
-	img, err := g.convertImage(request.Image)
+	img, err := g.convertImage(request)
 	if err != nil {
 		return "", fmt.Errorf("failed to convert image. %w", err)
 	}
 	return img, nil
 }
 
-func (g *OpenAIGenerator) convertImage(imageID string) (string, error) {
+func (g *OpenAIGenerator) convertImage(request models.ImageToImageRequest) (string, error) {
 	payload := openAIChatRequest{
-		Model: "gpt-4o",
+		Model: g.chatModel,
 		Messages: []openAIChatMessage{
+			{
+				Role: "system",
+				Content: []openAIChatContent{
+					{
+						Type: "text",
+						Text: g.systemPrompt,
+					},
+				},
+			},
 			{
 				Role: "user",
 				Content: []openAIChatContent{
 					{
-						Type: "image_url",
-						ImageURL: &openAIChatImageURL{
-							URL: imageID,
-						},
+						Type: "text",
+						Text: g.userPrompt,
 					},
 					{
-						Type: "text",
-						Text: "Describe this image in way that DALL-E 2 can understand it and generate a new image from it in a LEGO mosaic style. The description should be detailed and specific, focusing on the key elements of the image.",
+						Type: "image_url",
+						ImageURL: &openAIChatImageURL{
+							URL: request.Image,
+						},
 					},
 				},
 			},
@@ -166,11 +184,12 @@ func (g *OpenAIGenerator) convertImage(imageID string) (string, error) {
 	if err := json.Unmarshal(resp, &chatResp); err != nil {
 		return "", fmt.Errorf("failed to unmarshal chat response. %w", err)
 	}
+	log.Println(chatResp.Choices[0].Message.Content)
 	imageRequest := models.TextToImageRequest{
-		Model:       "dall-e-2",
+		Model:       g.imageModel,
 		TextPrompts: []string{chatResp.Choices[0].Message.Content},
-		Height:      512,
-		Width:       512,
+		Height:      request.Height,
+		Width:       request.Width,
 	}
 	img, err := g.GenerateImageFromText(imageRequest)
 	if err != nil {

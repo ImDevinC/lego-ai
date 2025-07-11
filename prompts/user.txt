@@ -1,0 +1,11 @@
+Please describe the uploaded image so that DALL·E can recreate it entirely in LEGO.
+
+All objects should be built from LEGO bricks.
+
+Any people must be LEGO minifigures with yellow heads, printed faces, and a single molded LEGO hairpiece if visible.
+
+Do not describe heads or hair as being built from LEGO bricks.
+
+Only describe what’s visible — do not invent or assume any unseen details.
+
+Your description should be formatted as a single prompt for DALL·E to use directly.

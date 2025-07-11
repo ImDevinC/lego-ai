@@ -15,11 +15,19 @@ func main() {
 	if apiKey == "" {
 		log.Fatal("missing OPENAI_API_KEY")
 	}
-	oai := imagegenerators.NewOpenAIGenerator(apiKey, "gpt-4o")
+	systemPrompt, err := os.ReadFile("prompts/system.txt")
+	if err != nil {
+		log.Fatal(err)
+	}
+	userPrompt, err := os.ReadFile("prompts/user.txt")
+	if err != nil {
+		log.Fatal(err)
+	}
+	oai := imagegenerators.NewOpenAIGenerator(apiKey, "dall-e-3", "gpt-4o", string(systemPrompt), string(userPrompt))
 	req := models.NewImageToImageRequest(
-		512,
-		512,
-		"https://platform.vox.com/wp-content/uploads/sites/2/chorus/author_profile_images/195199/Screen_Shot_2021-12-13_at_12.25.33_PM.0.png?quality=90&strip=all&crop=0%2C0%2C100%2C100&w=256",
+		1024,
+		1024,
+		"https://lh3.googleusercontent.com/pw/AP1GczPpcHP2mtRHd3CdU42DfP9SBzAC54YSpfAhRjhabW_KvAriMwGfI2McBv3ImkaDdGStuPo62SGPJtsCHlbN9ESi8ruASLPEqXEL_b2aIKaD_bkc8TIV9vew7w0Lp__1npNJzn3Vv5QKN6LLSb0FKdXqwA=w512-h911-s-no-gm?authuser=0",
 	)
 	resp, err := oai.GenerateImageFromImage(req)
 	if err != nil {
