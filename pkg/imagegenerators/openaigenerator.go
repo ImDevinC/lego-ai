@@ -21,6 +21,7 @@ type OpenAIGenerator struct {
 	chatModel    string
 	systemPrompt string
 	userPrompt   string
+	legoPrompt   string
 }
 
 type openAIImageRequest struct {
@@ -76,7 +77,7 @@ type openAIChatResponse struct {
 
 var _ Generator = (*OpenAIGenerator)(nil)
 
-func NewOpenAIGenerator(apiKey string, imageModel string, chatModel string, systemPrompt string, userPrompt string) OpenAIGenerator {
+func NewOpenAIGenerator(apiKey string, imageModel string, chatModel string, systemPrompt string, userPrompt string, legoPrompt string) OpenAIGenerator {
 	return OpenAIGenerator{
 		urlBase:      "https://api.openai.com/v1/",
 		imageModel:   imageModel,
@@ -84,6 +85,7 @@ func NewOpenAIGenerator(apiKey string, imageModel string, chatModel string, syst
 		apiKey:       apiKey,
 		systemPrompt: systemPrompt,
 		userPrompt:   userPrompt,
+		legoPrompt:   legoPrompt,
 	}
 }
 
@@ -187,7 +189,7 @@ func (g *OpenAIGenerator) convertImage(request models.ImageToImageRequest) (stri
 	log.Println(chatResp.Choices[0].Message.Content)
 	imageRequest := models.TextToImageRequest{
 		Model:       g.imageModel,
-		TextPrompts: []string{chatResp.Choices[0].Message.Content},
+		TextPrompts: []string{g.legoPrompt, chatResp.Choices[0].Message.Content},
 		Height:      request.Height,
 		Width:       request.Width,
 	}

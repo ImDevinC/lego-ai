@@ -23,7 +23,11 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	oai := imagegenerators.NewOpenAIGenerator(apiKey, "dall-e-3", "gpt-4o", string(systemPrompt), string(userPrompt))
+	legoPrompt, err := os.ReadFile("prompts/lego.txt")
+	if err != nil {
+		log.Fatal(err)
+	}
+	oai := imagegenerators.NewOpenAIGenerator(apiKey, "dall-e-3", "gpt-4o", string(systemPrompt), string(userPrompt), string(legoPrompt))
 	req := models.NewImageToImageRequest(
 		1024,
 		1024,
