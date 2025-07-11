@@ -1,3 +1,6 @@
 .env
 *.png
 .git/
+.github/
+Dockerfile
+.dockerignore

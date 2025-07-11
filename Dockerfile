@@ -17,5 +17,6 @@ FROM --platform=${BUILDPLATFORM:-linux/amd64} gcr.io/distroless/base
 USER nonroot:nonroot
 
 COPY --from=builder --chown=nonroot:nonroot /server /server
+COPY --from=builder --chown=nonroot:nonroot /src/prompts ./prompts
 
 ENTRYPOINT [ "/server" ]
