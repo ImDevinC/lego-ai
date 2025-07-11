@@ -18,5 +18,7 @@ USER nonroot:nonroot
 
 COPY --from=builder --chown=nonroot:nonroot /server /server
 COPY --from=builder --chown=nonroot:nonroot /src/prompts ./prompts
+COPY --from=builder --chown=nonroot:nonroot /src/templates ./templates
+COPY --from=builder --chown=nonroot:nonroot /src/static ./static
 
 ENTRYPOINT [ "/server" ]
