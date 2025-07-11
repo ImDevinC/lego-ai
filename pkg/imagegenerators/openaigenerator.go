@@ -7,7 +7,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"log"
 	"net/http"
 	"strings"
 
@@ -16,7 +15,6 @@ import (
 
 type OpenAIGenerator struct {
 	urlBase      string
-	apiKey       string
 	imageModel   string
 	chatModel    string
 	systemPrompt string
@@ -77,24 +75,23 @@ type openAIChatResponse struct {
 
 var _ Generator = (*OpenAIGenerator)(nil)
 
-func NewOpenAIGenerator(apiKey string, imageModel string, chatModel string, systemPrompt string, userPrompt string, legoPrompt string) OpenAIGenerator {
+func NewOpenAIGenerator(imageModel string, chatModel string, systemPrompt string, userPrompt string, legoPrompt string) OpenAIGenerator {
 	return OpenAIGenerator{
 		urlBase:      "https://api.openai.com/v1/",
 		imageModel:   imageModel,
 		chatModel:    chatModel,
-		apiKey:       apiKey,
 		systemPrompt: systemPrompt,
 		userPrompt:   userPrompt,
 		legoPrompt:   legoPrompt,
 	}
 }
 
-func (g *OpenAIGenerator) do(endpoint string, request []byte, extraHeaders map[string]string) ([]byte, error) {
+func (g *OpenAIGenerator) do(apikey string, endpoint string, request []byte, extraHeaders map[string]string) ([]byte, error) {
 	req, err := http.NewRequest(http.MethodPost, g.urlBase+endpoint, bytes.NewReader(request))
 	if err != nil {
 		return nil, fmt.Errorf("failed to generate request. %w", err)
 	}
-	req.Header.Add("Authorization", "Bearer "+g.apiKey)
+	req.Header.Add("Authorization", "Bearer "+apikey)
 	for k, v := range extraHeaders {
 		req.Header.Add(k, v)
 	}
@@ -125,7 +122,7 @@ func (g *OpenAIGenerator) GenerateImageFromText(request models.TextToImageReques
 	if err != nil {
 		return "", fmt.Errorf("failed to marshal input. %w", err)
 	}
-	resp, err := g.do("images/generations", bytes, nil)
+	resp, err := g.do(request.APIKey, "images/generations", bytes, nil)
 	if err != nil {
 		return "", err
 	}
@@ -167,7 +164,7 @@ func (g *OpenAIGenerator) convertImage(request models.ImageToImageRequest) (stri
 					{
 						Type: "image_url",
 						ImageURL: &openAIChatImageURL{
-							URL: request.Image,
+							URL: "data:image/png;base64," + request.Image,
 						},
 					},
 				},
@@ -178,7 +175,7 @@ func (g *OpenAIGenerator) convertImage(request models.ImageToImageRequest) (stri
 	if err != nil {
 		return "", fmt.Errorf("failed to marshal chat request. %w", err)
 	}
-	resp, err := g.do("chat/completions", bytes, map[string]string{"Content-Type": "application/json"})
+	resp, err := g.do(request.APIKey, "chat/completions", bytes, map[string]string{"Content-Type": "application/json"})
 	if err != nil {
 		return "", fmt.Errorf("failed to perform chat request. %w", err)
 	}
@@ -186,8 +183,9 @@ func (g *OpenAIGenerator) convertImage(request models.ImageToImageRequest) (stri
 	if err := json.Unmarshal(resp, &chatResp); err != nil {
 		return "", fmt.Errorf("failed to unmarshal chat response. %w", err)
 	}
-	log.Println(chatResp.Choices[0].Message.Content)
+	//log.Println(chatResp.Choices[0].Message.Content)
 	imageRequest := models.TextToImageRequest{
+		APIKey:      request.APIKey,
 		Model:       g.imageModel,
 		TextPrompts: []string{g.legoPrompt, chatResp.Choices[0].Message.Content},
 		Height:      request.Height,
