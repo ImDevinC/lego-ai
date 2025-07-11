@@ -1,15 +1,11 @@
 package imagegenerators
 
 import (
-	"bufio"
 	"bytes"
 	"encoding/json"
 	"fmt"
 	"io"
-	"mime/multipart"
 	"net/http"
-	"net/textproto"
-	"strconv"
 	"strings"
 
 	"github.com/imdevinc/ghibli-ai/pkg/models"
@@ -21,7 +17,7 @@ type OpenAIGenerator struct {
 	model   string
 }
 
-type openAIRequest struct {
+type openAIImageRequest struct {
 	Model          string `json:"model"`
 	Prompt         string `json:"prompt"`
 	Count          int    `json:"n"`
@@ -29,26 +25,63 @@ type openAIRequest struct {
 	ResponseFormat string `json:"response_format"`
 }
 
-type openAIResponse struct {
+type openAIImageResponse struct {
 	Data []struct {
 		B64JSON string `json:"b64_json"`
 	} `json:"data"`
+}
+
+type openAIUploadResponse struct {
+	ID        string `json:"id"`
+	Object    string `json:"object"`
+	Filename  string `json:"filename"`
+	Purpose   string `json:"purpose"`
+	CreatedAt int64  `json:"created_at"`
+	Bytes     int64  `json:"bytes"`
+}
+
+type openAIChatRequest struct {
+	Model    string              `json:"model"`
+	Messages []openAIChatMessage `json:"messages"`
+}
+
+type openAIChatMessage struct {
+	Role    string              `json:"role"`
+	Content []openAIChatContent `json:"content"`
+}
+
+type openAIChatContent struct {
+	ImageURL *openAIChatImageURL `json:"image_url,omitempty"`
+	Text     string              `json:"text,omitempty"`
+	Type     string              `json:"type"`
+}
+
+type openAIChatImageURL struct {
+	URL string `json:"url"`
+}
+
+type openAIChatResponse struct {
+	Choices []struct {
+		Message struct {
+			Content string `json:"content"`
+		} `json:"message"`
+	} `json:"choices"`
 }
 
 var _ Generator = (*OpenAIGenerator)(nil)
 
 func NewOpenAIGenerator(apiKey string, model string) OpenAIGenerator {
 	return OpenAIGenerator{
-		urlBase: "https://api.openai.com/v1/images/",
+		urlBase: "https://api.openai.com/v1/",
 		model:   model,
 		apiKey:  apiKey,
 	}
 }
 
-func (g *OpenAIGenerator) do(endpoint string, request []byte, extraHeaders map[string]string) (openAIResponse, error) {
+func (g *OpenAIGenerator) do(endpoint string, request []byte, extraHeaders map[string]string) ([]byte, error) {
 	req, err := http.NewRequest(http.MethodPost, g.urlBase+endpoint, bytes.NewReader(request))
 	if err != nil {
-		return openAIResponse{}, fmt.Errorf("failed to generate request. %w", err)
+		return nil, fmt.Errorf("failed to generate request. %w", err)
 	}
 	req.Header.Add("Authorization", "Bearer "+g.apiKey)
 	for k, v := range extraHeaders {
@@ -56,83 +89,92 @@ func (g *OpenAIGenerator) do(endpoint string, request []byte, extraHeaders map[s
 	}
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
-		return openAIResponse{}, fmt.Errorf("failed to perform request. %w", err)
+		return nil, fmt.Errorf("failed to perform request. %w", err)
 	}
 	defer resp.Body.Close()
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return openAIResponse{}, fmt.Errorf("failed to read body. %w", err)
+		return nil, fmt.Errorf("failed to read body. %w", err)
 	}
 	if resp.StatusCode != http.StatusOK {
-		return openAIResponse{}, fmt.Errorf("unexpected response code: %d. %s. %s", resp.StatusCode, resp.Status, string(body))
+		return nil, fmt.Errorf("unexpected response code: %d. %s. %s", resp.StatusCode, resp.Status, string(body))
 	}
-	var r openAIResponse
-	err = json.Unmarshal(body, &r)
-	if err != nil {
-		return openAIResponse{}, fmt.Errorf("failed to unmarshal response. %w", err)
-	}
-	return r, nil
+	return body, nil
 }
 
 func (g *OpenAIGenerator) GenerateImageFromText(request models.TextToImageRequest) (string, error) {
-	req := openAIRequest{
-		Model:          g.model,
+	req := openAIImageRequest{
+		Model:          request.Model,
 		Prompt:         strings.Join(request.TextPrompts, "\n"),
-		Count:          request.Samples,
 		Size:           fmt.Sprintf("%dx%d", request.Width, request.Height),
 		ResponseFormat: "b64_json",
+		Count:          1,
 	}
 	bytes, err := json.Marshal(req)
 	if err != nil {
 		return "", fmt.Errorf("failed to marshal input. %w", err)
 	}
-	resp, err := g.do("generations", bytes, nil)
+	resp, err := g.do("images/generations", bytes, nil)
 	if err != nil {
 		return "", err
 	}
-	return resp.Data[0].B64JSON, nil
+	var respData openAIImageResponse
+	if err := json.Unmarshal(resp, &respData); err != nil {
+		return "", fmt.Errorf("failed to unmarshal response. %w", err)
+	}
+	return respData.Data[0].B64JSON, nil
 }
 
 func (g *OpenAIGenerator) GenerateImageFromImage(request models.ImageToImageRequest) (string, error) {
-	var body bytes.Buffer
-	writer := multipart.NewWriter(&body)
-	partHeader := make(textproto.MIMEHeader)
-	partHeader.Set("Content-Disposition", fmt.Sprintf(`form-data; name="image"; filename="%s"`, "image.png"))
-	partHeader.Set("Content-Type", "image/png")
-	part, err := writer.CreatePart(partHeader)
+	img, err := g.convertImage(request.Image)
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("failed to convert image. %w", err)
 	}
-	_, err = io.Copy(part, bytes.NewReader(request.Image))
+	return img, nil
+}
+
+func (g *OpenAIGenerator) convertImage(imageID string) (string, error) {
+	payload := openAIChatRequest{
+		Model: "gpt-4o",
+		Messages: []openAIChatMessage{
+			{
+				Role: "user",
+				Content: []openAIChatContent{
+					{
+						Type: "image_url",
+						ImageURL: &openAIChatImageURL{
+							URL: imageID,
+						},
+					},
+					{
+						Type: "text",
+						Text: "Describe this image in way that DALL-E 2 can understand it and generate a new image from it in a LEGO mosaic style. The description should be detailed and specific, focusing on the key elements of the image.",
+					},
+				},
+			},
+		},
+	}
+	bytes, err := json.Marshal(payload)
 	if err != nil {
-		return "", fmt.Errorf("failed to copy image to buffer. %w", err)
+		return "", fmt.Errorf("failed to marshal chat request. %w", err)
 	}
-	if err := writer.WriteField("model", g.model); err != nil {
-		return "", err
-	}
-	if err := writer.WriteField("prompt", strings.Join(request.TextPrompts, "\n")); err != nil {
-		return "", err
-	}
-	samples := strconv.Itoa(request.Samples)
-	if err := writer.WriteField("n", samples); err != nil {
-		return "", err
-	}
-	if err := writer.WriteField("size", fmt.Sprintf("%dx%d", request.Width, request.Height)); err != nil {
-		return "", err
-	}
-	if err := writer.WriteField("response_format", "b64_json"); err != nil {
-		return "", err
-	}
-	if err := writer.Close(); err != nil {
-		return "", err
-	}
-	payload, err := io.ReadAll(bufio.NewReader(&body))
+	resp, err := g.do("chat/completions", bytes, map[string]string{"Content-Type": "application/json"})
 	if err != nil {
-		return "", fmt.Errorf("failed to read buffer. %w", err)
+		return "", fmt.Errorf("failed to perform chat request. %w", err)
 	}
-	resp, err := g.do("edits", payload, map[string]string{"Content-Type": writer.FormDataContentType()})
+	var chatResp openAIChatResponse
+	if err := json.Unmarshal(resp, &chatResp); err != nil {
+		return "", fmt.Errorf("failed to unmarshal chat response. %w", err)
+	}
+	imageRequest := models.TextToImageRequest{
+		Model:       "dall-e-2",
+		TextPrompts: []string{chatResp.Choices[0].Message.Content},
+		Height:      512,
+		Width:       512,
+	}
+	img, err := g.GenerateImageFromText(imageRequest)
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("failed to generate image from text. %w", err)
 	}
-	return resp.Data[0].B64JSON, nil
+	return img, nil
 }
