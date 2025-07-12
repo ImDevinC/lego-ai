@@ -111,9 +111,10 @@ func (g *OpenAIGenerator) do(apikey string, endpoint string, request []byte, ext
 }
 
 func (g *OpenAIGenerator) GenerateImageFromText(request models.TextToImageRequest) (string, error) {
+	prompts := append([]string{g.legoPrompt}, request.TextPrompts...)
 	req := openAIImageRequest{
-		Model:          request.Model,
-		Prompt:         strings.Join(request.TextPrompts, "\n"),
+		Model:          g.imageModel,
+		Prompt:         strings.Join(prompts, "\n"),
 		Size:           fmt.Sprintf("%dx%d", request.Width, request.Height),
 		ResponseFormat: "b64_json",
 		Count:          1,
@@ -133,15 +134,7 @@ func (g *OpenAIGenerator) GenerateImageFromText(request models.TextToImageReques
 	return respData.Data[0].B64JSON, nil
 }
 
-func (g *OpenAIGenerator) GenerateImageFromImage(request models.ImageToImageRequest) (string, error) {
-	img, err := g.convertImage(request)
-	if err != nil {
-		return "", fmt.Errorf("failed to convert image. %w", err)
-	}
-	return img, nil
-}
-
-func (g *OpenAIGenerator) convertImage(request models.ImageToImageRequest) (string, error) {
+func (g *OpenAIGenerator) GenerateDescriptionFromImage(request models.ImageToTextRequest) (string, error) {
 	payload := openAIChatRequest{
 		Model: g.chatModel,
 		Messages: []openAIChatMessage{
@@ -183,17 +176,5 @@ func (g *OpenAIGenerator) convertImage(request models.ImageToImageRequest) (stri
 	if err := json.Unmarshal(resp, &chatResp); err != nil {
 		return "", fmt.Errorf("failed to unmarshal chat response. %w", err)
 	}
-	//log.Println(chatResp.Choices[0].Message.Content)
-	imageRequest := models.TextToImageRequest{
-		APIKey:      request.APIKey,
-		Model:       g.imageModel,
-		TextPrompts: []string{g.legoPrompt, chatResp.Choices[0].Message.Content},
-		Height:      request.Height,
-		Width:       request.Width,
-	}
-	img, err := g.GenerateImageFromText(imageRequest)
-	if err != nil {
-		return "", fmt.Errorf("failed to generate image from text. %w", err)
-	}
-	return img, nil
+	return chatResp.Choices[0].Message.Content, nil
 }

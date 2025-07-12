@@ -184,7 +184,7 @@
   </div>
 
   <div id="key-container">
-    <input type="text" id="api-key" placeholder="Enter your OpenAI API key">
+    <input type="password" id="api-key" placeholder="Enter your OpenAI API key">
     <p class="hint">Your key is not stored at all, it is only used to send the request</p>
   </div>
   <button id="generate-btn" disabled>Generate</button>
@@ -196,6 +196,7 @@
     <button class="close-btn" id="info-close-btn">&times;</button>
     <span id="info-message">Make sure to save your image now, it is not stored anywhere else</span>
   </div>
+  <input type="hidden" id="prompt" value="">
   <div id="output"></div>
 </main>
 
@@ -211,6 +212,7 @@
   const errorMessageContainer = document.getElementById('error-message');
   const infoContainer =  document.getElementById('info-alert')
   const infoCloseBtn = document.getElementById('info-close-btn');
+  const promptInput = document.getElementById('prompt');
 
   let selectedFile = null;
 
@@ -253,6 +255,7 @@
       previewImg.hidden = false;
     };
     reader.readAsDataURL(file);
+    promptInput.value = ''; // Clear previous prompt
     updateButtonState();
   }
 
@@ -274,6 +277,9 @@
       const formData = new FormData();
       formData.append('image', selectedFile);
       formData.append('apiKey', apiKeyInput.value.trim());
+      if (promptInput.value) {
+        formData.append('prompt', promptInput.value.trim());
+      }
 
       // Replace URL with your backend endpoint
       const res = await fetch('/upload', {
@@ -282,9 +288,11 @@
       });
 
       if (!res.ok) throw new Error('Failed to generate');
-      const blob = await res.blob();
-      const imgUrl = URL.createObjectURL(blob);
-      output.innerHTML = `<img src="${imgUrl}" alt="Brickified result">`;
+      const json = await res.json();
+      const imgB64 = json.image;
+      const prompt = json.prompt;
+      promptInput.value = prompt;
+      output.innerHTML = `<img src="data:image/png;base64, ${imgB64}" alt="Brickified result">`;
       infoContainer.style.display = 'block';
     } catch (err) {
       errorContainer.style.display = 'block';
@@ -293,7 +301,11 @@
       dropArea.classList.remove('loading');
       fileInput.disabled = false;
       generateBtn.disabled = false;
-      generateBtn.textContent = 'Generate';
+      if (promptInput.value) {
+        generateBtn.textContent = 'Regenerate';
+      } else {
+        generateBtn.textContent = 'Generate';
+      }
     }
   });
 </script>
