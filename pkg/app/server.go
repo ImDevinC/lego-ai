@@ -1,8 +1,8 @@
 package app
 
 import (
-	"bytes"
 	"encoding/base64"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"html/template"
@@ -56,55 +56,66 @@ func (s *Server) indexHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) uploadHandler(w http.ResponseWriter, r *http.Request) {
-	b64image, apiKey, err := getUploadData(r)
+	b64image, apiKey, prompt, err := getUploadData(r)
 	if err != nil {
 		slog.Error("failed to get user data", "error", err)
 		http.Error(w, "invalid request", http.StatusBadRequest)
 		return
 	}
-	request := models.NewImageToImageRequest(apiKey, 1024, 1024, b64image)
-	imageResult, err := s.Generator.GenerateImageFromImage(request)
+	description := prompt
+	if prompt == "" {
+		slog.Info("no prompt provided, generating description from image")
+		describeRequest := models.NewImageToTextRequest(apiKey, b64image)
+		imageDescription, err := s.Generator.GenerateDescriptionFromImage(describeRequest)
+		if err != nil {
+			slog.Error("failed to describe image", "error", err)
+			http.Error(w, "internal server error", http.StatusInternalServerError)
+			return
+		}
+		description = imageDescription
+	}
+	slog.Info("generating image from description", "description", description)
+	imageRequest := models.NewTextToImageRequest(apiKey, description, 1024, 1024, 1)
+	imageResult, err := s.Generator.GenerateImageFromText(imageRequest)
 	if err != nil {
-		slog.Error("failed to generate image", "error", err)
+		slog.Error("failed to generate image from text", "error", err)
 		http.Error(w, "internal server error", http.StatusInternalServerError)
 		return
 	}
-	data, err := base64.StdEncoding.DecodeString(imageResult)
-	if err != nil {
-		slog.Error("failed to decode image", "error", err)
-		http.Error(w, "internal server error", http.StatusInternalServerError)
-		return
+
+	response := models.UploadResponse{
+		Image:  imageResult,
+		Prompt: description,
 	}
-	w.Header().Set("Content-Type", "image/png")
-	reader := bytes.NewReader(data)
-	if _, err := io.Copy(w, reader); err != nil {
-		slog.Error("failed to write image", "error", err)
-		http.Error(w, "invalid image", http.StatusInternalServerError)
+
+	if err := json.NewEncoder(w).Encode(response); err != nil {
+		slog.Error("failed to encode response", "error", err)
+		http.Error(w, "internal server error", http.StatusInternalServerError)
 		return
 	}
 }
 
-func getUploadData(r *http.Request) (string, string, error) {
+func getUploadData(r *http.Request) (string, string, string, error) {
 	err := r.ParseMultipartForm(50 << 20) // 50 MB
 	if err != nil {
-		return "", "", fmt.Errorf("failed to parse form. %w", err)
+		return "", "", "", fmt.Errorf("failed to parse form. %w", err)
 	}
 	apiKey := r.Form.Get("apiKey")
 	if apiKey == "" {
-		return "", "", errors.New("missing apiKey")
+		return "", "", "", errors.New("missing apiKey")
 	}
+	prompt := r.Form.Get("prompt")
 	file, header, err := r.FormFile("image")
 	if err != nil {
-		return "", "", fmt.Errorf("failed to get image from form. %w", err)
+		return "", "", "", fmt.Errorf("failed to get image from form. %w", err)
 	}
 	if header.Size > MAX_SIZE {
-		return "", "", errors.New("image too big")
-
+		return "", "", "", errors.New("image too big")
 	}
 	data, err := io.ReadAll(file)
 	if err != nil {
-		return "", "", fmt.Errorf("failed to read file. %w", err)
+		return "", "", "", fmt.Errorf("failed to read file. %w", err)
 	}
 	b64Data := base64.StdEncoding.EncodeToString(data)
-	return b64Data, apiKey, nil
+	return b64Data, apiKey, prompt, nil
 }
