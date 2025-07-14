@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Brick Yourself</title>
   <style>
     body {
@@ -19,13 +20,26 @@
       font-weight: bold;
       color: #222;
     }
+    @media (max-width: 480px) {
+      header {
+        padding: 0.75rem;
+        font-size: 1.25rem;
+      }
+    }
     main {
       margin: 2rem auto;
-      max-width: 400px;
+      max-width: 90%;
+      width: 100%;
       background: #fff;
-      padding: 2rem;
+      padding: 1.5rem;
       border-radius: 8px;
-      box-shadow: 0.08px 8px rgba(0,0,0,0.1);
+      box-shadow: 0 8px 16px rgba(0,0,0,0.1);
+    }
+    @media (min-width: 600px) {
+      main {
+        max-width: 500px;
+        padding: 2rem;
+      }
     }
     #drop-area {
       border: 2px dashed #ccc;
@@ -34,6 +48,14 @@
       margin-bottom: 1rem;
       cursor: pointer;
       position: relative;
+    }
+    @media (max-width: 480px) {
+      #drop-area {
+        padding: 1rem;
+      }
+      #drop-area img {
+        max-height: 150px;
+      }
     }
     #drop-area.hover {
       background: #eef;
@@ -76,6 +98,11 @@
     #output img {
       max-width: 100%;
       border-radius: 4px;
+    }
+    @media (max-width: 480px) {
+      #output {
+        margin-top: 1rem;
+      }
     }
     .hint {
       color: #A7A7A7;
@@ -124,6 +151,14 @@
       border-radius: 0.375rem;
       font-size: 1rem;
       line-height: 1.5;
+    }
+    
+    @media (max-width: 480px) {
+      .alert {
+        padding: 0.75rem 1rem;
+        margin: 0.75rem 0;
+        font-size: 0.9rem;
+      }
     }
 
     .alert-info {
