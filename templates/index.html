@@ -251,6 +251,15 @@
 
   let selectedFile = null;
 
+  // Load API key from localStorage on page load
+  document.addEventListener('DOMContentLoaded', () => {
+    const savedApiKey = localStorage.getItem('openai-api-key');
+    if (savedApiKey) {
+      apiKeyInput.value = savedApiKey;
+      updateButtonState();
+    }
+  });
+
   // Enable click to select file
   dropArea.addEventListener('click', () => fileInput.click());
   fileInput.addEventListener('change', () => handleFiles(fileInput.files));
@@ -329,6 +338,9 @@
       promptInput.value = prompt;
       output.innerHTML = `<img src="data:image/png;base64, ${imgB64}" alt="Brickified result">`;
       infoContainer.style.display = 'block';
+      
+      // Store API key in localStorage only after a successful response
+      localStorage.setItem('openai-api-key', apiKeyInput.value.trim());
     } catch (err) {
       errorContainer.style.display = 'block';
       errorMessageContainer.innerText = err.message;
