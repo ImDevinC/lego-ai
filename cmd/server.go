@@ -40,7 +40,11 @@ func main() {
 		slog.Error("missing LEGOAI_CHAT_MODEL")
 		os.Exit(1)
 	}
-	generator := imagegenerators.NewOpenAIGenerator(imageModel, chatModel, string(systemPrompt), string(userPrompt), string(legoPrompt))
+	openaiBase := os.Getenv("LEGOAI_OPENAI_BASE_URL")
+	if openaiBase == "" {
+		openaiBase = "https://api.openai.com/v1/"
+	}
+	generator := imagegenerators.NewOpenAIGenerator(openaiBase, imageModel, chatModel, string(systemPrompt), string(userPrompt), string(legoPrompt))
 	server := app.Server{
 		Port:        8080,
 		TemplateDir: "templates",
