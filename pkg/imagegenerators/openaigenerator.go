@@ -75,9 +75,9 @@ type openAIChatResponse struct {
 
 var _ Generator = (*OpenAIGenerator)(nil)
 
-func NewOpenAIGenerator(imageModel string, chatModel string, systemPrompt string, userPrompt string, legoPrompt string) OpenAIGenerator {
+func NewOpenAIGenerator(baseUrl string, imageModel string, chatModel string, systemPrompt string, userPrompt string, legoPrompt string) OpenAIGenerator {
 	return OpenAIGenerator{
-		urlBase:      "https://api.openai.com/v1/",
+		urlBase:      baseUrl,
 		imageModel:   imageModel,
 		chatModel:    chatModel,
 		systemPrompt: systemPrompt,
