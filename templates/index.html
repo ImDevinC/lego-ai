@@ -4,235 +4,377 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Brick Yourself</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
   <style>
-    body {
-      font-family: Arial, sans-serif;
-      text-align: center;
-      margin: 0;
-      padding: 0;
-      background: #f9f9f9;
-      color: #333;
-    }
-    header {
-      background: #ffc107;
-      padding: 1rem;
-      font-size: 1.5rem;
-      font-weight: bold;
-      color: #222;
-    }
-    @media (max-width: 480px) {
-      header {
-        padding: 0.75rem;
-        font-size: 1.25rem;
-      }
-    }
-    main {
-      margin: 2rem auto;
-      max-width: 90%;
-      width: 100%;
-      background: #fff;
-      padding: 1.5rem;
-      border-radius: 8px;
-      box-shadow: 0 8px 16px rgba(0,0,0,0.1);
-    }
-    @media (min-width: 600px) {
-      main {
-        max-width: 500px;
-        padding: 2rem;
-      }
-    }
-    #drop-area {
-      border: 2px dashed #ccc;
-      border-radius: 8px;
-      padding: 1.5rem;
-      margin-bottom: 1rem;
-      cursor: pointer;
-      position: relative;
-    }
-    @media (max-width: 480px) {
-      #drop-area {
-        padding: 1rem;
-      }
-      #drop-area img {
-        max-height: 150px;
-      }
-    }
-    #drop-area.hover {
-      background: #eef;
-    }
-    #drop-area img {
-      max-width: 100%;
-      max-height: 200px;
-      margin-top: 1rem;
-      border-radius: 4px;
-    }
-    input {
-      width: 100%;
-      padding: 0.75rem;
-      margin-bottom: 1rem;
-      font-size: 1rem;
-      border: 1px solid #ccc;
-      border-radius: 4px;
-    }
-    button {
-      color: white;
-      cursor: pointer;
-      border: none;
-    }
-    button:disabled {
-      opacity: 0.6;
-      cursor: default;
-    }
-    button#generate-btn {
-      background: #28a745;
-      width: 100%;
-      padding: 0.75rem;
-      margin-bottom: 1rem;
-      font-size: 1rem;
-      border: 1px solid #ccc;
-      border-radius: 4px;
-    }
-    #output {
-      margin-top: 1.5rem;
-    }
-    #output img {
-      max-width: 100%;
-      border-radius: 4px;
-    }
-    @media (max-width: 480px) {
-      #output {
-        margin-top: 1rem;
-      }
-    }
-    .hint {
-      color: #A7A7A7;
-      font-size: .8em;
-    }
-    #api-key {
-      margin-bottom: 0;
-    }
-    .loading::after {
-      content: "";
-      background: rgb(23, 162, 74);
-      width: 0.25em;
-      height: 100%;
-      display: block;
-      position: absolute;
-      top: 0;
-      right: 0;
-      left: 0;
-      bottom: 0;
-      margin: auto;
-      opacity: 7;
-      z-index: 2;
-      animation: 2s infinite ease-in-out roll;
+    :root {
+      --primary: #FDC800;
+      --secondary: #432DD7;
+      --success: #16A34A;
+      --warning: #D97706;
+      --danger: #DC2626;
+      --surface: #FBFBF9;
+      --text: #1C293C;
+      --border: #1C293C;
+      --font-sans: 'Inter', system-ui, sans-serif;
+      --font-mono: 'JetBrains Mono', monospace;
+      --shadow-offset: 6px;
+      --border-w: 3px;
+      --radius: 0;
     }
 
-    @keyframes roll {
-      0% {
-        transform: translateX(-100px);
-      }
-      50% {
-        transform: translateX(100px);
-      }
-      100% {
-        transform: translateX(-100px);
-      }
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
     }
-    .loading {
-      opacity: .5;
+
+    body {
+      font-family: var(--font-sans);
+      background: var(--surface);
+      color: var(--text);
+      margin: 0;
+      padding: 32px 16px;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .header {
+      background: var(--primary);
+      border: var(--border-w) solid var(--border);
+      box-shadow: var(--shadow-offset) var(--shadow-offset) 0 var(--border);
+      padding: 16px 32px;
+      font-size: 27px;
+      font-weight: 900;
+      color: var(--text);
+      text-transform: uppercase;
+      letter-spacing: -0.02em;
+      display: inline-block;
+      margin-bottom: 32px;
+      width: 100%;
+      max-width: 560px;
+      text-align: center;
+    }
+
+    .card {
+      background: #fff;
+      border: var(--border-w) solid var(--border);
+      box-shadow: var(--shadow-offset) var(--shadow-offset) 0 var(--border);
+      padding: 32px;
+      width: 100%;
+      max-width: 560px;
+    }
+
+    @media (max-width: 480px) {
+      body { padding: 16px 12px; }
+      .header {
+        padding: 12px 16px;
+        font-size: 21px;
+        margin-bottom: 24px;
+      }
+      .card { padding: 24px 16px; }
+    }
+
+    .drop-area {
+      border: var(--border-w) dashed var(--border);
+      padding: 32px 16px;
+      cursor: pointer;
+      text-align: center;
+      transition: background 0.15s, box-shadow 0.15s;
+      position: relative;
+      margin-bottom: 24px;
+      background: var(--surface);
+    }
+
+    .drop-area.hover,
+    .drop-area:hover {
+      background: #fff;
+      box-shadow: 3px 3px 0 var(--border);
+    }
+
+    .drop-area-text {
+      font-size: 17px;
+      font-weight: 600;
+      margin: 0;
+      color: var(--text);
+    }
+
+    .drop-area-text-small {
+      font-size: 13px;
+      font-weight: 400;
+      color: var(--text);
+      opacity: 0.55;
+      margin: 8px 0 0;
+    }
+
+    .drop-area img {
+      max-width: 100%;
+      max-height: 220px;
+      margin-top: 16px;
+      border: 2px solid var(--border);
+    }
+
+    .field-label {
+      font-size: 15px;
+      font-weight: 700;
+      display: block;
+      margin-bottom: 8px;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+    }
+
+    .input {
+      width: 100%;
+      padding: 12px 16px;
+      font-size: 15px;
+      font-family: var(--font-sans);
+      border: var(--border-w) solid var(--border);
+      background: #fff;
+      color: var(--text);
+      outline: none;
+      transition: box-shadow 0.15s;
+      margin-bottom: 24px;
+      border-radius: 0;
+    }
+
+    .input:focus-visible {
+      box-shadow: 3px 3px 0 var(--border);
+    }
+
+    .input::placeholder {
+      color: var(--text);
+      opacity: 0.35;
+    }
+
+    .hint {
+      font-size: 13px;
+      color: var(--text);
+      opacity: 0.5;
+      margin: -16px 0 24px;
+      line-height: 1.4;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      width: 100%;
+      padding: 14px 24px;
+      font-size: 17px;
+      font-weight: 800;
+      font-family: var(--font-sans);
+      border: var(--border-w) solid var(--border);
+      cursor: pointer;
+      transition: transform 0.1s, box-shadow 0.1s;
+      text-transform: uppercase;
+      letter-spacing: 0.02em;
+      border-radius: 0;
+    }
+
+    .btn:active:not(:disabled) {
+      transform: translate(3px, 3px);
+      box-shadow: none;
+    }
+
+    .btn:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+
+    .btn-primary {
+      background: var(--secondary);
+      color: #fff;
+      box-shadow: 4px 4px 0 var(--border);
+    }
+
+    .btn-primary:hover:not(:disabled) {
+      box-shadow: 6px 6px 0 var(--border);
+    }
+
+    .btn-primary:focus-visible {
+      outline: 3px solid var(--primary);
+      outline-offset: 2px;
     }
 
     .alert {
-      position: relative;
-      padding: 1rem 1.5rem;
-      margin: 1rem;
-      border: 1px solid transparent;
-      border-radius: 0.375rem;
-      font-size: 1rem;
+      border: var(--border-w) solid var(--border);
+      padding: 16px 48px 16px 16px;
+      font-size: 15px;
       line-height: 1.5;
+      position: relative;
+      margin: 24px 0 0;
+      font-weight: 500;
     }
-    
-    @media (max-width: 480px) {
-      .alert {
-        padding: 0.75rem 1rem;
-        margin: 0.75rem 0;
-        font-size: 0.9rem;
-      }
+
+    .alert-error {
+      background: #fef2f2;
+      color: var(--danger);
+      border-color: var(--danger);
+      box-shadow: 3px 3px 0 var(--danger);
     }
 
     .alert-info {
-      color: #055160;
-      background-color: #cff4fc;
-      border-color: #b6effb;
-    }
-
-    .alert-error {
-      color: #842029;
-      background-color: #f8d7da;
-      border-color: #f5c2c7;
-    }
-    
-    .alert-error {
-      color: #842029;
-      background-color: #f8d7da;
-      border-color: #f5c2c7;
+      background: #eef2ff;
+      color: var(--secondary);
+      border-color: var(--secondary);
+      box-shadow: 3px 3px 0 var(--secondary);
     }
 
     .alert .close-btn {
       position: absolute;
-      top: 0.75rem;
-      right: 1rem;
+      top: 12px;
+      right: 12px;
       background: none;
       border: none;
-      font-size: 1.2rem;
+      font-size: 21px;
       cursor: pointer;
+      line-height: 1;
+      padding: 4px 8px;
+      font-weight: 700;
+      color: inherit;
     }
 
-    .alert-error .close-btn {
-      color: #842029;
+    .alert .close-btn:hover {
+      opacity: 0.6;
     }
 
-    .alert-error .close-btn:hover {
-      color: #5a1016;
+    .output {
+      margin-top: 24px;
     }
 
-    .alert-info .close-btn {
-      color: #055160;
+    .output img {
+      max-width: 100%;
+      border: var(--border-w) solid var(--border);
+      box-shadow: 4px 4px 0 var(--border);
+      display: block;
     }
 
-    .alert-info .close-btn:hover {
-      color: #033944;
+    .loading-overlay {
+      position: absolute;
+      inset: 0;
+      background: rgba(28, 41, 60, 0.06);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 2;
+    }
+
+    .drop-area.loading .loading-overlay {
+      display: flex;
+    }
+
+    .drop-area.loading .drop-area-text,
+    .drop-area.loading .drop-area-text-small {
+      opacity: 0.3;
+    }
+
+    .brick-loader {
+      display: flex;
+      gap: 4px;
+      align-items: center;
+    }
+
+    .brick {
+      width: 28px;
+      height: 20px;
+      background: var(--secondary);
+      border: 2px solid var(--border);
+      position: relative;
+      animation: bounce 1.2s ease-in-out infinite;
+    }
+
+    .brick::before {
+      content: '';
+      position: absolute;
+      top: -6px;
+      left: 4px;
+      width: 12px;
+      height: 6px;
+      background: var(--secondary);
+      border: 2px solid var(--border);
+      border-bottom: none;
+      border-radius: 2px 2px 0 0;
+    }
+
+    .brick:nth-child(2) {
+      animation-delay: 0.15s;
+      background: var(--primary);
+    }
+
+    .brick:nth-child(2)::before {
+      background: var(--primary);
+    }
+
+    .brick:nth-child(3) {
+      animation-delay: 0.3s;
+    }
+
+    .brick:nth-child(3)::before {
+      background: var(--secondary);
+    }
+
+    @keyframes bounce {
+      0%, 80%, 100% { transform: translateY(0); }
+      40% { transform: translateY(-12px); }
+    }
+
+    .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0,0,0,0);
+      white-space: nowrap;
+      border: 0;
     }
   </style>
 </head>
 <body>
 
-<header>Brick Yourself</header>
+<header class="header">Brick Yourself</header>
 
-<main>
-  <div id="drop-area">
-    <p>Drop an image here or click to select.</p>
-    <input type="file" id="file-input" accept="image/*" style="display:none;">
-    <img id="preview" alt="" hidden>
-    <div class="scanline-overlay"></div>
+<main class="card">
+  <div id="drop-area" class="drop-area" role="button" tabindex="0" aria-label="Upload an image">
+    <p class="drop-area-text">Drop an image here or click to select.</p>
+    <p class="drop-area-text-small">PNG, JPG, WEBP &mdash; max 50 MB</p>
+    <input type="file" id="file-input" accept="image/*" hidden>
+    <img id="preview" alt="Preview" hidden>
+    <div class="loading-overlay">
+      <div class="brick-loader" aria-label="Generating" role="status">
+        <span class="sr-only">Generating your lego image...</span>
+        <div class="brick"></div>
+        <div class="brick"></div>
+        <div class="brick"></div>
+      </div>
+    </div>
   </div>
 
-  <div id="key-container">
-    <input type="password" id="api-key" placeholder="Enter your OpenAI API key">
-    <p class="hint">Your key is not stored on the server at all, it is only used to send the request and stored in your browser for the future</p>
-  </div>
-  <button id="generate-btn" disabled>Generate</button>
-  <div class="alert alert-error" id="error-alert" style="display:none">
-    <button class="close-btn" id="error-close-btn">&times;</button>
+  <label for="api-key" class="field-label">OpenAI API Key</label>
+  <input type="password" id="api-key" class="input" placeholder="sk-..." autocomplete="off">
+  <p class="hint">Your key is sent directly to OpenAI and never stored on the server. It is saved in your browser for future use.</p>
+
+  <button id="generate-btn" class="btn btn-primary" disabled>
+    Generate
+  </button>
+
+  <div class="alert alert-error" id="error-alert" hidden>
+    <button class="close-btn" id="error-close-btn" aria-label="Dismiss error">&times;</button>
     <span id="error-message"></span>
   </div>
-  <div class="alert alert-info" id="info-alert" style="display:none">
-    <button class="close-btn" id="info-close-btn">&times;</button>
-    <span id="info-message">Make sure to save your image now, it is not stored anywhere else</span>
+
+  <div class="alert alert-info" id="info-alert" hidden>
+    <button class="close-btn" id="info-close-btn" aria-label="Dismiss message">&times;</button>
+    <span id="info-message">Save your image now &mdash; it is not stored on the server.</span>
   </div>
+
   <input type="hidden" id="prompt" value="">
-  <div id="output"></div>
+  <div id="output" class="output"></div>
 </main>
 
 <script>
@@ -242,65 +384,66 @@
   const apiKeyInput = document.getElementById('api-key');
   const generateBtn = document.getElementById('generate-btn');
   const output = document.getElementById('output');
-  const errorContainer = document.getElementById('error-alert')
+  const errorContainer = document.getElementById('error-alert');
   const errorCloseBtn = document.getElementById('error-close-btn');
   const errorMessageContainer = document.getElementById('error-message');
-  const infoContainer =  document.getElementById('info-alert')
+  const infoContainer = document.getElementById('info-alert');
   const infoCloseBtn = document.getElementById('info-close-btn');
   const promptInput = document.getElementById('prompt');
 
   let selectedFile = null;
 
-  // Load API key from localStorage on page load
   document.addEventListener('DOMContentLoaded', () => {
-    const savedApiKey = localStorage.getItem('openai-api-key');
-    if (savedApiKey) {
-      apiKeyInput.value = savedApiKey;
+    const saved = localStorage.getItem('openai-api-key');
+    if (saved) {
+      apiKeyInput.value = saved;
       updateButtonState();
     }
   });
 
-  // Enable click to select file
   dropArea.addEventListener('click', () => fileInput.click());
+  dropArea.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      fileInput.click();
+    }
+  });
   fileInput.addEventListener('change', () => handleFiles(fileInput.files));
-  errorCloseBtn.addEventListener('click', () => {errorContainer.style.display='none'});
-  infoCloseBtn.addEventListener('click', () => {infoContainer.style.display='none'});
+  errorCloseBtn.addEventListener('click', () => { errorContainer.hidden = true; });
+  infoCloseBtn.addEventListener('click', () => { infoContainer.hidden = true; });
 
-  // Drag/drop handlers
-  ['dragenter','dragover','dragleave','drop'].forEach(event => {
-    dropArea.addEventListener(event, preventDefaults, false);
+  ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(ev => {
+    dropArea.addEventListener(ev, e => { e.preventDefault(); e.stopPropagation(); }, false);
   });
-  ['dragenter','dragover'].forEach(event => {
-    dropArea.addEventListener(event, () => dropArea.classList.add('hover'), false);
+  ['dragenter', 'dragover'].forEach(ev => {
+    dropArea.addEventListener(ev, () => dropArea.classList.add('hover'), false);
   });
-  ['dragleave','drop'].forEach(event => {
-    dropArea.addEventListener(event, () => dropArea.classList.remove('hover'), false);
+  ['dragleave', 'drop'].forEach(ev => {
+    dropArea.addEventListener(ev, () => dropArea.classList.remove('hover'), false);
   });
 
   dropArea.addEventListener('drop', e => {
     handleFiles(e.dataTransfer.files);
   });
 
-  function preventDefaults(e) {
-    e.preventDefault();
-    e.stopPropagation();
-  }
-
   function handleFiles(files) {
     if (files.length === 0) return;
     const file = files[0];
-    if (!file.type.startsWith('image/')) return alert('Please upload an image');
+    if (!file.type.startsWith('image/')) {
+      showError('Please upload an image file.');
+      return;
+    }
     selectedFile = file;
-
-    // Show preview
     const reader = new FileReader();
     reader.onload = e => {
       previewImg.src = e.target.result;
       previewImg.hidden = false;
     };
     reader.readAsDataURL(file);
-    promptInput.value = ''; // Clear previous prompt
+    promptInput.value = '';
     updateButtonState();
+    errorContainer.hidden = true;
+    infoContainer.hidden = true;
   }
 
   function updateButtonState() {
@@ -309,10 +452,15 @@
 
   apiKeyInput.addEventListener('input', updateButtonState);
 
+  function showError(msg) {
+    errorMessageContainer.innerText = msg;
+    errorContainer.hidden = false;
+  }
+
   generateBtn.addEventListener('click', async () => {
     if (!selectedFile || !apiKeyInput.value.trim()) return;
-    errorContainer.style.display = 'none';
-    infoContainer.style.display = 'none';
+    errorContainer.hidden = true;
+    infoContainer.hidden = true;
     generateBtn.disabled = true;
     generateBtn.textContent = 'Generating...';
     dropArea.classList.add('loading');
@@ -321,42 +469,27 @@
       const formData = new FormData();
       formData.append('image', selectedFile);
       formData.append('apiKey', apiKeyInput.value.trim());
-      if (promptInput.value) {
-        formData.append('prompt', promptInput.value.trim());
+      if (promptInput.value) formData.append('prompt', promptInput.value.trim());
+      const res = await fetch('/upload', { method: 'POST', body: formData });
+      if (!res.ok) {
+        const text = await res.text().catch(() => 'Request failed');
+        throw new Error(text || `Server returned ${res.status}`);
       }
-
-      // Replace URL with your backend endpoint
-      const res = await fetch('/upload', {
-        method: 'POST',
-        body: formData
-      });
-
-      if (!res.ok) throw new Error('Failed to generate');
       const json = await res.json();
-      const imgB64 = json.image;
-      const prompt = json.prompt;
-      promptInput.value = prompt;
-      output.innerHTML = `<img src="data:image/png;base64, ${imgB64}" alt="Brickified result">`;
-      infoContainer.style.display = 'block';
-      
-      // Store API key in localStorage only after a successful response
+      output.innerHTML = `<img src="data:image/png;base64,${json.image}" alt="Legoified result">`;
+      promptInput.value = json.prompt;
+      infoContainer.hidden = false;
       localStorage.setItem('openai-api-key', apiKeyInput.value.trim());
     } catch (err) {
-      errorContainer.style.display = 'block';
-      errorMessageContainer.innerText = err.message;
+      showError(err.message);
     } finally {
       dropArea.classList.remove('loading');
       fileInput.disabled = false;
       generateBtn.disabled = false;
-      if (promptInput.value) {
-        generateBtn.textContent = 'Regenerate';
-      } else {
-        generateBtn.textContent = 'Generate';
-      }
+      generateBtn.textContent = promptInput.value ? 'Regenerate' : 'Generate';
     }
   });
 </script>
 
 </body>
 </html>
-
